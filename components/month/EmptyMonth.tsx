@@ -1,39 +1,93 @@
-import { useState } from 'react';
-import { View, Text, TextInput, Button } from 'react-native';
-import styles from './EmptyMonth.styles';
-import SourceTitle from '@/components/SourceTitle/SourceTitle';
+import { useState, useEffect } from 'react';
+import { View, Text } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+import SourceTitle from '@/components/sourceTitle/SourceTitle';
 import HintBlock from '@/components/ui/HintBlock';
 import CustomInput from '../ui/CustomInput';
 import CustomButton from '../ui/CustomButton';
+import { Source } from '@/components/types'; 
 
-export default function EmptyMonth({ onSubmit }) {
-    const [usd, setUsd] = useState('');
-    const [eur, setEur] = useState('');
-    const [uah, setUah] = useState('');
-    const [sources, setSources] = useState([{ id: 1, name: 'Джерело 1' }]);
+import styles from './emptyMonth.styles';
+
+interface EmptyMonthProps {
+  onSubmit: (sources: Source[]) => void;
+  monthKey: string;
+  initialSources?: Source[];
+}
+
+export default function EmptyMonth({ onSubmit, monthKey, initialSources = [] }: EmptyMonthProps) {
+    const [sources, setSources] = useState<Source[]>(initialSources.length > 0 ? initialSources : [
+      { id: 1, name: 'Джерело 1', USD: '', EUR: '', UAH: '' }
+    ]);
+
+    // 🚀 Завантажуємо дані при відкритті сторінки
+    useEffect(() => {
+        const loadSavedData = async () => {
+            try {
+                const savedData = await AsyncStorage.getItem(`balance_${monthKey}`);
+                if (savedData) {
+                    setSources(JSON.parse(savedData));
+                }
+            } catch (error) {
+                console.error('Error loading saved balance:', error);
+            }
+        };
+        loadSavedData();
+    }, [monthKey]);
 
     const addSource = () => {
-        const newSource = { id: sources.length + 1, name: `Джерело ${sources.length + 1}` };
+        const newSource: Source = {
+            id: sources.length + 1,
+            name: `Джерело ${sources.length + 1}`,
+            USD: '',
+            EUR: '',
+            UAH: ''
+        };
         setSources([...sources, newSource]);
     };
 
-    const updateSourceName = (id, newName) => {
-        setSources(
-            sources.map((source) =>
+    const updateSourceName = (id: number, newName: string) => {
+        setSources(sources.map(source =>
             source.id === id ? { ...source, name: newName } : source
-            )
-        );
+        ));
+    };
+
+    const updateSourceValue = (id: number, field: keyof Source, value: string) => {
+        setSources(sources.map(source =>
+            source.id === id ? { ...source, [field]: value } : source
+        ));
     };
 
     const deleteSource = (id: number) => {
-        setSources(sources.filter((source) => source.id !== id));
+        setSources(sources.filter(source => source.id !== id));
+    };
+
+    // 🚀 Функція для збереження даних
+    const handleSubmit = async () => {
+        try {
+            console.log('Saving data with key:', monthKey);  // Тут вже правильний ключ
+            await AsyncStorage.setItem(monthKey, JSON.stringify(sources));  // Забираємо зайвий префікс
+            console.log('Saved sources:', sources);
+            onSubmit(sources); 
+        } catch (error) {
+            console.error('Error saving balance:', error);
+        }
     };
 
     return (
         <View style={styles.container}>
-            <View style={styles.form}>
-                <Text style={styles.title}>Заповнення Балансу</Text>
+            <KeyboardAwareScrollView 
+                style={styles.form} 
+                contentContainerStyle={{ paddingBottom: 100 }}
+                keyboardShouldPersistTaps="handled"
+                enableOnAndroid
+                enableAutomaticScroll>
+                
+                <Text style={[styles.title]}>Заповнення Балансу</Text>
                 <HintBlock text="Почни зі створення джерела (місце де зберігаються активи) та дай йому зрозумілу для тебе назву." />
+                
                 {sources.map((source) => (
                     <View key={source.id} style={styles.sourceContainer}>
                         <SourceTitle
@@ -48,27 +102,30 @@ export default function EmptyMonth({ onSubmit }) {
                         <CustomInput
                             style={[styles.mb24, styles.mt24]}
                             label="USD – залишок"
-                            placeholder="0,00" 
+                            placeholder="0,00"
                             allowNumbersOnly
-                            value={usd}
-                            onChangeText={setUsd}/>
+                            value={source.USD}
+                            onChangeText={(value) => updateSourceValue(source.id, 'USD', value)}
+                        />
                         <CustomInput 
                             style={styles.mb24}
                             label="EUR – залишок"
                             placeholder="0,00"
                             allowNumbersOnly
-                            value={eur}
-                            onChangeText={setEur}/>
+                            value={source.EUR}
+                            onChangeText={(value) => updateSourceValue(source.id, 'EUR', value)}
+                        />
                         <CustomInput 
                             style={styles.mb24}
                             label="UAH – залишок"
                             placeholder="0,00"
                             allowNumbersOnly
-                            value={uah}
-                            onChangeText={setUah}/>
+                            value={source.UAH}
+                            onChangeText={(value) => updateSourceValue(source.id, 'UAH', value)}
+                        />
                     </View>
                 ))}
-            </View>
+            </KeyboardAwareScrollView>
 
             <View style={styles.fixedButtonContainer}>
                 <CustomButton 
@@ -77,7 +134,7 @@ export default function EmptyMonth({ onSubmit }) {
                     type="ghost" />
                 <CustomButton 
                     title="Зберегти Баланс" 
-                    onPress={onSubmit} />
+                    onPress={handleSubmit} />
             </View>
         </View>
     );

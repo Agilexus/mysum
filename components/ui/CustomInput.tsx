@@ -1,6 +1,17 @@
 import { useState } from 'react';
 import { View, Text, TextInput, StyleSheet } from 'react-native';
 
+import { typography } from '../style';
+
+interface CustomInputProps {
+  label?: string;
+  placeholder?: string;
+  style?: object;
+  value?: string;
+  onChangeText?: (text: string) => void;
+  allowNumbersOnly?: boolean;
+}
+
 export default function CustomInput({
   label, 
   placeholder, 
@@ -8,13 +19,12 @@ export default function CustomInput({
   value, 
   onChangeText,
   allowNumbersOnly = false
-}) {
+}: CustomInputProps) {
   const [isFocused, setIsFocused] = useState(false);
   const hasLabel = Boolean(label); 
 
-
   // Обробник зміни тексту (кожна літера, що вводиться)
-  const handleChangeText = (text) => {
+  const handleChangeText = (text: string) => {
     // Якщо не вмикаємо "числовий" режим, просто викликаємо onChangeText
     if (!allowNumbersOnly) {
       onChangeText?.(text);
@@ -73,11 +83,12 @@ export default function CustomInput({
   return (
     <View style={[style]}>
       {hasLabel && (
-        <Text style={styles.label}>{label}</Text>
+        <Text style={[typography.regular, styles.label]}>{label}</Text>
       )}
 
       <TextInput
         style={[
+            typography.regular,
             styles.input, 
             isFocused && styles.focusedInput
         ]}
@@ -95,11 +106,13 @@ export default function CustomInput({
 const styles = StyleSheet.create({
   input: {
     fontSize: 20,
+    lineHeight: 24,
+    height: 48,
     color: '#026C57',
     borderWidth: 2,
     borderColor: '#026C57',
     borderRadius: 8,
-    paddingVertical: 12,
+    paddingVertical: 10,
     paddingHorizontal: 16,
   },
   focusedInput: {
@@ -110,8 +123,6 @@ const styles = StyleSheet.create({
   },
   label: {
     color: '#026C57',
-    fontFamily: "SF Pro Rounded",
-    fontSize: 17,
     marginBottom: 8
   }
 });

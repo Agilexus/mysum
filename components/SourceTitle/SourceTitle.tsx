@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Image } from 'react-native';
-import styles from './SourceTitle.styles';
 import CustomInput from '../ui/CustomInput';
+
+import { typography } from '../style';
+import styles from './SourceTitle.styles';
 
 export default function SourceTitle({ title, onChangeTitle, onDelete, showDelete }) {
     const [isEditing, setIsEditing] = useState(false);
@@ -28,11 +30,6 @@ export default function SourceTitle({ title, onChangeTitle, onDelete, showDelete
                         placeholder="Дайте назву джерелу доходів..." 
                         onChangeText={setCurrentTitle}/>
                     
-                    {/* <TextInput
-                        style={styles.input}
-                        value={currentTitle}
-                        onChangeText={setCurrentTitle}
-                    /> */}
                     <View style={styles.icons}>
                         <TouchableOpacity onPress={handleCancel}>
                             <Image
@@ -51,7 +48,7 @@ export default function SourceTitle({ title, onChangeTitle, onDelete, showDelete
                 </View>
             ) : (
                 <View style={styles.displayContainer}>
-                    <Text style={styles.title}>{currentTitle}</Text>
+                    <Text style={[styles.title, typography.midlText]}>{currentTitle}</Text>
                     <TouchableOpacity onPress={() => setIsEditing(true)}>
                         <Image
                             source={require('../../assets/icon/edit.png')} 

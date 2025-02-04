@@ -1,12 +1,20 @@
 import { TouchableOpacity, Text, StyleSheet } from 'react-native';
 
-export default function CustomButton({ title, onPress, type = 'filled' }) {
+import { typography } from '../style';
+
+interface CustomButtonProps {
+  title: string;
+  onPress: () => void;
+  type?: 'filled' | 'ghost';
+}
+
+export default function CustomButton({ title, onPress, type = 'filled' }: CustomButtonProps) {
   return (
     <TouchableOpacity
       style={[styles.button, type === 'ghost' && styles.ghostButton]}
       onPress={onPress}
     >
-      <Text style={[styles.text, type === 'ghost' && styles.ghostText]}>{title}</Text>
+      <Text style={[typography.midlText, styles.text, type === 'ghost' && styles.ghostText]}>{title}</Text>
     </TouchableOpacity>
   );
 }

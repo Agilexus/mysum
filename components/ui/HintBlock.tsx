@@ -1,16 +1,20 @@
 import { View, Text } from 'react-native';
 import { StyleSheet } from 'react-native';
 
-export default function HintBlock({ text }) {
+import { typography } from '../style';
+
+interface HintBlockProps {
+  text: string;
+}
+
+export default function HintBlock({ text }: HintBlockProps) {
   return (
     <View style={styles.container}>
       <View style={styles.line}></View>
-      <Text style={styles.text}>{text}</Text>
+      <Text style={[styles.text, typography.regular]}>{text}</Text>
     </View>
   );
 }
-
-
 
 const styles = StyleSheet.create({
   container: {
@@ -21,7 +25,7 @@ const styles = StyleSheet.create({
   },
   text: {
     color: '#026C57',
-    fontSize: 17,
+    opacity: 0.7,
   },
   line: {
     position: 'absolute',

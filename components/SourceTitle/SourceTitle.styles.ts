@@ -19,8 +19,6 @@ const styles = StyleSheet.create({
   },
   title: {
     flex: 1,
-    fontSize: 24,
-    fontWeight: 'bold',
     color: '#026C57',
   },
   icon: {
