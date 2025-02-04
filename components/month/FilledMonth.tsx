@@ -59,7 +59,7 @@ export default function FilledMonth({ sources = [], currentMonth, onEdit }: Fill
       <View style={styles.fixedButtonContainer}>
         <CustomButton 
           title="Редагувати" 
-          onPress={onEdit}  // Використовуємо нову функцію для переходу в режим редагування
+          onPress={onEdit}
         />
       </View>
     </View>

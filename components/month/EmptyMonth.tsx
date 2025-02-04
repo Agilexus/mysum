@@ -67,9 +67,7 @@ export default function EmptyMonth({ onSubmit, monthKey, initialSources = [] }: 
     // 🚀 Функція для збереження даних
     const handleSubmit = async () => {
         try {
-            console.log('Saving data with key:', monthKey);  // Тут вже правильний ключ
             await AsyncStorage.setItem(monthKey, JSON.stringify(sources));  // Забираємо зайвий префікс
-            console.log('Saved sources:', sources);
             onSubmit(sources); 
         } catch (error) {
             console.error('Error saving balance:', error);

@@ -3,13 +3,15 @@ import styles from './Header.styles';
 
 interface HeaderProps {
   month: string;
+  onNextMonth: () => void;   // Функція для переходу на наступний місяць
+  onPreviousMonth: () => void;  // Функція для переходу на попередній місяць
 }
 
-export default function Header({ month }: HeaderProps) {
+export default function Header({ month, onNextMonth, onPreviousMonth }: HeaderProps) {
   return (
     <View style={styles.container}>
       {/* Ліва стрілка */}
-      <TouchableOpacity>
+      <TouchableOpacity onPress={onPreviousMonth}>
         <Image source={require('../../assets/icon/left.png')} style={styles.icon} />
       </TouchableOpacity>
 
@@ -17,7 +19,7 @@ export default function Header({ month }: HeaderProps) {
       <Text style={styles.month}>{month}</Text>
 
       {/* Права стрілка */}
-      <TouchableOpacity>
+      <TouchableOpacity onPress={onNextMonth}>
         <Image source={require('../../assets/icon/right.png')} style={styles.icon} />
       </TouchableOpacity>
     </View>

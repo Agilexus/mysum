@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { View } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import EmptyMonth from '@/components/month/EmptyMonth';
@@ -7,18 +7,19 @@ import FilledMonth from '@/components/month/FilledMonth';
 import Header from '@/components/header/Header';
 import { mainStyles } from '@/components/style';
 import { Source } from '@/components/types';
-import { formatMonthYear } from '@/utils/dateUtils';  // Імпортуємо функцію для форматування
+import { formatMonthYear, getNextMonth, getPreviousMonth } from '@/utils/dateUtils';
 
 export default function MonthScreen() {
   const { month } = useLocalSearchParams();  
   const [sources, setSources] = useState<Source[]>([]);
-  const [isEditing, setIsEditing] = useState(false);  // Додаємо стан для редагування
+  const [isEditing, setIsEditing] = useState(false);
+  const [isNewMonth, setIsNewMonth] = useState(false);  // Відстеження, чи це новий місяць
+  const router = useRouter();
 
   const currentMonth = typeof month === 'string' ? month : "Січень";
-  const formattedMonth = formatMonthYear(currentMonth);  // Форматуємо місяць для шапки
+  const formattedMonth = formatMonthYear(currentMonth);
   const monthKey = `balance_${currentMonth}`;
 
-  // 🚀 Завантажуємо дані з AsyncStorage при кожному відкритті сторінки
   useEffect(() => {
     const loadSources = async () => {
       try {
@@ -27,39 +28,49 @@ export default function MonthScreen() {
         if (savedSources) {
           console.log('Data found:', savedSources);
           setSources(JSON.parse(savedSources));
+          setIsNewMonth(false);  // Якщо є дані, це не новий місяць
         } else {
           console.log('No data found for this key');
+          const previousMonthKey = `balance_${getPreviousMonth(currentMonth)}`;
+          const previousSources = await AsyncStorage.getItem(previousMonthKey);
+          if (previousSources) {
+            console.log('Cloning data from previous month:', previousMonthKey);
+            setSources(JSON.parse(previousSources));  // Копіюємо дані з попереднього місяця
+          } else {
+            setSources([]);  // Якщо даних немає, залишаємо порожнім
+          }
+          setIsNewMonth(true);  // Відзначаємо як новий місяць
         }
       } catch (error) {
         console.error('Error loading sources:', error);
       }
     };
-  
     loadSources();
   }, [monthKey]);
 
   const handleAddSources = (newSources: Source[]) => {
     setSources(newSources);
-    setIsEditing(false);  // Повертаємось до перегляду після збереження
+    setIsEditing(false);
+    setIsNewMonth(false);  // Після збереження місяць вважається заповненим
   };
 
-  useEffect(() => {
-    const checkAllKeys = async () => {
-      const keys = await AsyncStorage.getAllKeys();
-      console.log('All AsyncStorage keys after save:', keys);
-    };
-
-    checkAllKeys();
-  }, [sources]);
+  const navigateToMonth = (direction: 'next' | 'previous') => {
+    const targetMonth = direction === 'next' ? getNextMonth(currentMonth) : getPreviousMonth(currentMonth);
+    router.push(`/${targetMonth}`);
+  };
 
   return (
     <View style={mainStyles.body}>
-      <Header month={formattedMonth} />  {/* Відображаємо форматовану назву місяця */}
-      {isEditing ? (
+      <Header 
+        month={formattedMonth} 
+        onNextMonth={() => navigateToMonth('next')} 
+        onPreviousMonth={() => navigateToMonth('previous')} 
+      />
+      {isEditing || isNewMonth ? (
         <EmptyMonth 
           onSubmit={handleAddSources} 
           monthKey={monthKey} 
-          initialSources={sources}  // Передаємо дані для редагування
+          initialSources={sources}  // Використовуємо дані попереднього місяця
         />
       ) : (
         <FilledMonth 
