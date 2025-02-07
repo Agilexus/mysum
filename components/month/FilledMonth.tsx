@@ -49,12 +49,31 @@ export default function FilledMonth({ sources = [], currentMonth, onEdit }: Fill
 
   return (
     <View style={styles.container}>
-      <View style={styles.contentContainer}>
-        <Text style={styles.title}>Ваш баланс:</Text>
-        <Text>USD: {formatNumber(totals.totalUSD)}</Text>
-        <Text>EUR: {formatNumber(totals.totalEUR)}</Text>
-        <Text>UAH: {formatNumber(totals.totalUAH)}</Text>
+      <View style={styles.mainBlock}>
+        
+        <View style={styles.mainCurrency}>
+          <Text style={styles.uahAmount}>
+            <Text style={styles.currencySign}>₴ </Text>
+            {formatNumber(totals.totalUAH)}
+          </Text>
+        </View>
+
+        <View style={styles.secondaryCurrency}>
+          <Text style={styles.otherCurrency}>
+            <Text style={styles.currencySign}>$ </Text>
+            {formatNumber(totals.totalUSD)}
+          </Text>
+
+          <Text style={styles.otherCurrency}>
+            <Text style={styles.currencySign}>€ </Text>
+            {formatNumber(totals.totalEUR)}
+          </Text>
+        </View>
+
+        <View style={styles.divider}></View>
       </View>
+
+
 
       <View style={styles.fixedButtonContainer}>
         <CustomButton 

@@ -7,9 +7,9 @@ export function calculateSourceTotals(sources: Source[], rates: CurrencyRates) {
   let totalUAH = 0;
 
   sources.forEach(source => {
-    const usd = parseFloat(source.USD.toString().replace(',', '.')) || 0;
-    const eur = parseFloat(source.EUR.toString().replace(',', '.')) || 0;
-    const uah = parseFloat(source.UAH.toString().replace(',', '.')) || 0;
+    const usd = parseFloat(source.USD.toString().replace(/\s/g, '').replace(',', '.')) || 0;
+    const eur = parseFloat(source.EUR.toString().replace(/\s/g, '').replace(',', '.')) || 0;
+    const uah = parseFloat(source.UAH.toString().replace(/\s/g, '').replace(',', '.')) || 0;
 
     totalUSD += usd;
     totalEUR += eur;

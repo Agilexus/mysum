@@ -26,15 +26,12 @@ export default function MonthScreen() {
         console.log('Loading data for key:', monthKey);
         const savedSources = await AsyncStorage.getItem(monthKey);
         if (savedSources) {
-          console.log('Data found:', savedSources);
           setSources(JSON.parse(savedSources));
           setIsNewMonth(false);  // Якщо є дані, це не новий місяць
         } else {
-          console.log('No data found for this key');
           const previousMonthKey = `balance_${getPreviousMonth(currentMonth)}`;
           const previousSources = await AsyncStorage.getItem(previousMonthKey);
           if (previousSources) {
-            console.log('Cloning data from previous month:', previousMonthKey);
             setSources(JSON.parse(previousSources));  // Копіюємо дані з попереднього місяця
           } else {
             setSources([]);  // Якщо даних немає, залишаємо порожнім
