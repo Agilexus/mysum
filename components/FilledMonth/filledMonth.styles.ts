@@ -59,6 +59,11 @@ const styles = StyleSheet.create({
     marginTop: 32,
     borderRadius: 100,
   },
+  infoMessage: {
+    ...typography.regular,
+    color: '#026C57',
+    textAlign: 'center',
+  }
 });
 
 export default styles;

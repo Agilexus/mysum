@@ -2,12 +2,13 @@ import { useEffect, useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { View } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import EmptyMonth from '@/components/month/EmptyMonth';
-import FilledMonth from '@/components/month/FilledMonth';
+
+import EmptyMonth from '@/components/EmptyMonth/EmptyMonth';
+import FilledMonth from '@/components/FilledMonth/FilledMonth';
 import Header from '@/components/header/Header';
 import { mainStyles } from '@/components/style';
 import { Source } from '@/components/types';
-import { formatMonthYear, getNextMonth, getPreviousMonth } from '@/utils/dateUtils';
+import { formatMonthYear, getNextMonth, getRelativeMonth } from '@/utils/dateUtils';
 
 export default function MonthScreen() {
   const { month } = useLocalSearchParams();  
@@ -23,13 +24,14 @@ export default function MonthScreen() {
   useEffect(() => {
     const loadSources = async () => {
       try {
-        console.log('Loading data for key:', monthKey);
+        // 👇 Викликаємо з другим аргументом, щоб отримати попередній місяць:
+        const previousMonthKey = `balance_${getRelativeMonth(currentMonth, 'previous')}`;
         const savedSources = await AsyncStorage.getItem(monthKey);
+
         if (savedSources) {
           setSources(JSON.parse(savedSources));
           setIsNewMonth(false);  // Якщо є дані, це не новий місяць
         } else {
-          const previousMonthKey = `balance_${getPreviousMonth(currentMonth)}`;
           const previousSources = await AsyncStorage.getItem(previousMonthKey);
           if (previousSources) {
             setSources(JSON.parse(previousSources));  // Копіюємо дані з попереднього місяця
@@ -52,7 +54,10 @@ export default function MonthScreen() {
   };
 
   const navigateToMonth = (direction: 'next' | 'previous') => {
-    const targetMonth = direction === 'next' ? getNextMonth(currentMonth) : getPreviousMonth(currentMonth);
+    // 👇 Додаємо другий аргумент 'previous' / 'next'
+    const targetMonth = direction === 'next'
+      ? getNextMonth(currentMonth)
+      : getRelativeMonth(currentMonth, 'previous');
     router.push(`/${targetMonth}`);
   };
 
