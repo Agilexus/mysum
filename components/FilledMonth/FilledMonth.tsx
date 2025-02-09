@@ -9,27 +9,24 @@ import {
   Totals,
   Changes
 } from '@/utils/balanceUtils'; 
-import { fetchCurrencyRates, CurrencyRates } from '@/utils/currencyUtils';
 
+import {
+  getCurrencyRatesForMonth,
+  CurrencyRates,
+} from '@/utils/currencyUtils';
+
+import HintBlock from '@/components/ui/HintBlock';
 import CustomButton from '../ui/CustomButton';
 import ComparisonBlock from '../ComparisonBlock/ComparisonBlock';
+
 import styles from './filledMonth.styles';
 
 interface FilledMonthProps {
   sources: Source[];
-  currentMonth: string;
+  currentMonth: string;  // формат "YYYY-MM"
   onEdit: () => void;
 }
 
-// Форматування чисел ("10 000,00")
-const formatNumber = (value: number): string => {
-  if (!value) return '0,00';
-  return value
-    .toLocaleString('uk-UA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-    .replace('.', ',');
-};
-
-// Зміни за замовчуванням (коли попередні дані не завантажено)
 const defaultChanges: Changes = {
   usdChange: 0,
   eurChange: 0,
@@ -40,7 +37,28 @@ const defaultChanges: Changes = {
   isPositive: false,
 };
 
+// Визначення, чи monthString у майбутньому порівняно з "сьогодні"
+function isFutureMonth(monthString: string): boolean {
+  const [y, m] = monthString.split('-').map(Number);
+  const now = new Date();
+  const curYear = now.getFullYear();
+  const curMonth = now.getMonth() + 1;
+
+  if (y > curYear) return true;
+  if (y < curYear) return false;
+  return m > curMonth;
+}
+
+// Форматування числа у вигляді "10 000,00"
+const formatNumber = (value: number): string => {
+  if (!value) return '0,00';
+  return value
+    .toLocaleString('uk-UA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    .replace('.', ',');
+};
+
 export default function FilledMonth({ sources = [], currentMonth, onEdit }: FilledMonthProps) {
+  // Тотали для *поточного* місяця
   const [totals, setTotals] = useState<Totals>({
     totalUSD: 0,
     totalEUR: 0,
@@ -50,118 +68,117 @@ export default function FilledMonth({ sources = [], currentMonth, onEdit }: Fill
     totalEURFinal: 0,
   });
 
-  const [currencyRates, setCurrencyRates] = useState<CurrencyRates>({ USD: 0, EUR: 0 });
+  // Курси для *поточного* місяця (USD, EUR, dateUsed)
+  const [currentMonthRates, setCurrentMonthRates] = useState<CurrencyRates>({
+    USD: 0,
+    EUR: 0,
+    dateUsed: '',
+  });
 
-  // Для обчислення 2-го блоку: попередній місяць (відносно currentMonth в списку)
-  const [previousMonthData, setPreviousMonthData] = useState<Source[] | null>(null);
+  // 2-й блок: різниця з попереднім місяцем
   const [previousChanges, setPreviousChanges] = useState<Changes>(defaultChanges);
 
-  // Для обчислення 3-го блоку: найперший місяць у списку
-  const [firstMonthData, setFirstMonthData] = useState<Source[] | null>(null);
-  const [firstMonthChanges, setFirstMonthChanges] = useState<Changes>(defaultChanges);
+  // 3-й блок: різниця з першим місяцем у цьому ж році
+  const [firstMonthSameYearChanges, setFirstMonthSameYearChanges] = useState<Changes>(defaultChanges);
 
-  // Поточний індекс у масиві monthKeys
-  const [currentIndex, setCurrentIndex] = useState<number>(-1);
+  // Для логіки відображення
+  const [currentIndex, setCurrentIndex] = useState(-1);
+  const [sameYearIndex, setSameYearIndex] = useState(-1);
 
-  // 1) Завантажуємо курси з API (один раз)
+  // Рік поточного місяця (наприклад, "2025")
+  const [yearStr] = currentMonth.split('-');
+  const currentYear = parseInt(yearStr, 10);
+
+  // 1) Завантажуємо курси *для поточного місяця*
   useEffect(() => {
-    const fetchRates = async () => {
-      const rates = await fetchCurrencyRates('01.01.2025');
-      setCurrencyRates(rates);
+    const loadRates = async () => {
+      const rates = await getCurrencyRatesForMonth(currentMonth);
+      setCurrentMonthRates(rates);
     };
-    fetchRates();
-  }, []);
+    loadRates();
+  }, [currentMonth]);
 
-  // 2) Коли змінилися sources або курси – рахуємо totals
+  // 2) Коли є джерела + курси => обчислюємо Totals поточного місяця
   useEffect(() => {
-    if (sources.length && currencyRates.USD && currencyRates.EUR) {
-      setTotals(calculateSourceTotals(sources, currencyRates));
+    if (sources.length && currentMonthRates.USD && currentMonthRates.EUR) {
+      const curTotals = calculateSourceTotals(sources, currentMonthRates);
+      setTotals(curTotals);
     }
-  }, [sources, currencyRates]);
+  }, [sources, currentMonthRates]);
 
-  // 3) Головна логіка завантаження:
-  //    - Дістаємо всі місяці (monthKeys)
-  //    - Знаходимо currentIndex
-  //    - Якщо currentIndex > 0 => завантажуємо "попередній" місяць
-  //    - Якщо currentIndex >= 2 => завантажуємо "найперший" місяць
-  //    - Обчислюємо зміни (previousChanges, firstMonthChanges)
+  // 3) Логіка порівняння (попередній місяць та перший у році)
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        // 3.1) Отримуємо список усіх "balance_YYYY-MM"
-        const allKeys = await AsyncStorage.getAllKeys();
-        const monthKeys = allKeys
-          .filter(k => k.startsWith('balance_'))
-          .map(k => k.replace('balance_', ''))
-          .sort();
+    const loadComparisonData = async () => {
+      // 3.1) Витягуємо monthKeys
+      const allKeys = await AsyncStorage.getAllKeys();
+      const monthKeys = allKeys
+        .filter(k => k.startsWith('balance_'))
+        .map(k => k.replace('balance_', ''))
+        .sort();
 
-        // Знаходимо індекс поточного місяця в цьому списку
-        const idx = monthKeys.indexOf(currentMonth);
-        setCurrentIndex(idx);
+      // Визначаємо індекс currentMonth у списку
+      const idx = monthKeys.indexOf(currentMonth);
+      setCurrentIndex(idx);
 
-        // Якщо idx>0 => завантажуємо monthKeys[idx-1]
-        let loadedPrevData: Source[] | null = null;
-        if (idx > 0) {
-          const prevKey = `balance_${monthKeys[idx - 1]}`;
-          const prevData = await AsyncStorage.getItem(prevKey);
-          loadedPrevData = prevData ? JSON.parse(prevData) : null;
-          setPreviousMonthData(loadedPrevData);
-        } else {
-          // Якщо idx=0 (або -1, не знайшли), то попереднього немає
-          setPreviousMonthData(null);
+      // 2-й блок: якщо idx > 0, порівнюємо з monthKeys[idx-1]
+      let prevChanges = defaultChanges;
+      if (idx > 0 && totals) {
+        const prevMonth = monthKeys[idx - 1];
+        // Завантажуємо sources
+        const prevMonthRaw = await AsyncStorage.getItem(`balance_${prevMonth}`);
+        if (prevMonthRaw) {
+          const prevSources = JSON.parse(prevMonthRaw) as Source[];
+
+          // Завантажуємо курси саме для prevMonth
+          const prevMonthRates = await getCurrencyRatesForMonth(prevMonth);
+          const prevTotals = calculateSourceTotals(prevSources, prevMonthRates);
+
+          prevChanges = calculateChanges(totals, prevTotals);
         }
-
-        // Якщо idx >= 2 => завантажуємо monthKeys[0] (найперший)
-        let loadedFirstData: Source[] | null = null;
-        if (idx >= 2) {
-          const firstKey = `balance_${monthKeys[0]}`; // найперший
-          const firstData = await AsyncStorage.getItem(firstKey);
-          loadedFirstData = firstData ? JSON.parse(firstData) : null;
-          setFirstMonthData(loadedFirstData);
-        } else {
-          setFirstMonthData(null);
-        }
-
-        // ****** Обчислюємо зміни, якщо в нас є totals і завантажені дані
-        // Можемо обчислити прямо тут, щоби уникнути додаткових useEffect
-        if (totals && currencyRates.USD && currencyRates.EUR) {
-          // 2-й блок
-          if (loadedPrevData) {
-            const prevTotals = calculateSourceTotals(loadedPrevData, currencyRates);
-            setPreviousChanges(calculateChanges(totals, prevTotals));
-          } else {
-            setPreviousChanges(defaultChanges);
-          }
-
-          // 3-й блок
-          if (loadedFirstData) {
-            const fmTotals = calculateSourceTotals(loadedFirstData, currencyRates);
-            setFirstMonthChanges(calculateChanges(totals, fmTotals));
-          } else {
-            setFirstMonthChanges(defaultChanges);
-          }
-        } else {
-          // Якщо totals не готовий, скинемо зміни
-          setPreviousChanges(defaultChanges);
-          setFirstMonthChanges(defaultChanges);
-        }
-      } catch (err) {
-        console.error('Error loading comparison data:', err);
       }
+      setPreviousChanges(prevChanges);
+
+      // 3-й блок: шукаємо всі місяці цього року, визначаємо idxSameYear
+      const sameYearMonthKeys = monthKeys.filter(m => parseInt(m.split('-')[0]) === currentYear);
+      const idxSameYear = sameYearMonthKeys.indexOf(currentMonth);
+      setSameYearIndex(idxSameYear);
+
+      let firstYearChanges = defaultChanges;
+      if (idxSameYear >= 2 && totals) {
+        const firstYearMonth = sameYearMonthKeys[0];
+        // Джерела для першого місяця в поточному році
+        const firstYearRaw = await AsyncStorage.getItem(`balance_${firstYearMonth}`);
+        if (firstYearRaw) {
+          const firstYearSources = JSON.parse(firstYearRaw) as Source[];
+
+          // Курси для першого місяця року
+          const firstYearRates = await getCurrencyRatesForMonth(firstYearMonth);
+          const firstTotals = calculateSourceTotals(firstYearSources, firstYearRates);
+
+          firstYearChanges = calculateChanges(totals, firstTotals);
+        }
+      }
+      setFirstMonthSameYearChanges(firstYearChanges);
     };
 
-    loadData();
-  }, [currentMonth, totals, currencyRates]);
+    if (currentMonthRates.USD && currentMonthRates.EUR) {
+      loadComparisonData();
+    }
+  }, [currentMonth, totals, currentMonthRates, currentYear]);
 
-  // Функція перевірки, чи всі зміни = 0
-  const isZeroChanges = (ch: Changes) =>
-    ch.usdChange === 0 && ch.eurChange === 0 && ch.uahChange === 0;
-
-  // **** РЕНДЕР ****
+  // Рендер
   return (
     <View style={styles.container}>
 
-      {/* Головний блок (загальний підсумок) */}
+      <View style={styles.pill}>
+        <Text style={styles.infoMessage}>USD: {formatNumber(currentMonthRates.USD)}</Text>
+        <View style={styles.separator}></View>
+        <Text style={styles.infoMessage}> EUR: {formatNumber(currentMonthRates.EUR)}</Text>
+      </View>
+      <Text>dateUsed={currentMonthRates.dateUsed}</Text>
+     
+
+      {/* Основний блок: Totals (у гривні, доларі, євро) */}
       <View style={styles.mainBlock}>
         <View style={styles.mainCurrency}>
           <Text style={styles.uahAmount}>
@@ -175,37 +192,40 @@ export default function FilledMonth({ sources = [], currentMonth, onEdit }: Fill
             <Text style={styles.currencySign}>$ </Text>
             {formatNumber(totals.totalUSDFinal)}
           </Text>
-          <Text style={styles.otherCurrency}>
+          <Text style={[styles.otherCurrency, { marginBottom: 12 }]}>
             <Text style={styles.currencySign}>€ </Text>
             {formatNumber(totals.totalEURFinal)}
           </Text>
         </View>
 
+        {/* Якщо monthString в майбутньому => показуємо HintBlock з датою, за яку взято курс */}
+        {isFutureMonth(currentMonth) && currentMonthRates.dateUsed && (
+          <HintBlock text={`Курс валют за ${currentMonthRates.dateUsed}`} />
+        )}
+
         <View style={styles.divider} />
       </View>
 
-      {/* 1) Якщо currentIndex=0 => "Чудовий початок..." */}
+      {/* Якщо currentIndex=0 => це найперший місяць => показуємо текст */}
       {currentIndex === 0 && (
         <Text style={styles.infoMessage}>
           Чудовий початок, продовжуй заповнювати – і тут з'явиться різниця з твоїм попереднім балансом.
         </Text>
       )}
 
-      {/* 2) Якщо currentIndex >= 1 => показуємо 2-й блок (порівняння з попереднім),
-             але лише якщо зміни не = 0 */}
-      {currentIndex >= 1 && !isZeroChanges(previousChanges) && (
+      {/* 2-й блок: якщо currentIndex >=1 */}
+      {currentIndex >= 1 && (
         <ComparisonBlock
-          title="Порівняння з попереднім місяцем"
+          title="Порівняння з минулим місяцем"
           changes={previousChanges}
         />
       )}
 
-      {/* 3) Якщо currentIndex >= 2 => показуємо 3-й блок (порівняння з першим),
-             але лише якщо зміни не = 0 */}
-      {currentIndex >= 2 && !isZeroChanges(firstMonthChanges) && (
+      {/* 3-й блок: якщо sameYearIndex >=2 */}
+      {sameYearIndex >= 2 && (
         <ComparisonBlock
-          title="Порівняння з першим заповненим місяцем"
-          changes={firstMonthChanges}
+          title="Зміни від початку року"
+          changes={firstMonthSameYearChanges}
         />
       )}
 

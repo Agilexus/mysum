@@ -95,7 +95,7 @@ export function calculateChanges(currentTotals: Totals, previousTotals: Totals):
     usdPercent: calculatePercentage(currentTotals.totalUSDFinal, previousTotals.totalUSDFinal),
     eurPercent: calculatePercentage(currentTotals.totalEURFinal, previousTotals.totalEURFinal),
     uahPercent: calculatePercentage(currentTotals.totalUAHFinal, previousTotals.totalUAHFinal),
-    isPositive: usdChange > 0 || eurChange > 0 || uahChange > 0,
+    isPositive: (usdChange >= 0 && eurChange >= 0 && uahChange >= 0),
   };
 }
 

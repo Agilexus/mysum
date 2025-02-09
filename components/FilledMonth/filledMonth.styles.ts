@@ -2,6 +2,24 @@ import { StyleSheet } from 'react-native';
 import { typography } from '@/components/style';
 
 const styles = StyleSheet.create({
+  pill: {
+    flexDirection: 'row',
+    marginTop: 8,
+    marginHorizontal: 80,
+    display: 'flex',
+    height: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#C4E2DA',
+    borderRadius: 100,
+  },
+  separator: {
+    width: 2,
+    height: '100%',
+    backgroundColor: '#F4FFFB',
+    opacity: 0.5,
+    marginHorizontal: 16,
+  },
   container: {
     width: "100%",
     flex: 1,
@@ -56,7 +74,7 @@ const styles = StyleSheet.create({
     width: '100%',
     backgroundColor: '#026C57',
     opacity: 0.2,
-    marginTop: 32,
+    marginVertical: 32,
     borderRadius: 100,
   },
   infoMessage: {
