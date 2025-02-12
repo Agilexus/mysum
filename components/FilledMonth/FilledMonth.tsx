@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { View, Text } from 'react-native';
+import { Alert, View, Text, TouchableOpacity, Image } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { Source } from '@/components/types';
@@ -166,17 +166,36 @@ export default function FilledMonth({ sources = [], currentMonth, onEdit }: Fill
     }
   }, [currentMonth, totals, currentMonthRates, currentYear]);
 
+  const handleRefreshRates = async () => {
+    try {
+      // Видаляємо кеш
+      await AsyncStorage.removeItem(`currencyRates_${currentMonth}`);
+      // Далі заново викликаємо getCurrencyRatesForMonth для перезавантаження
+      const rates = await getCurrencyRatesForMonth(currentMonth);
+      setCurrentMonthRates(rates);
+      Alert.alert("Курс оновлено", `Новий курс за ${rates.dateUsed}`);
+    } catch (err) {
+      console.error("Error refreshing rates:", err);
+    }
+  };
   // Рендер
   return (
     <View style={styles.container}>
 
       <View style={styles.pill}>
-        <Text style={styles.infoMessage}>USD: {formatNumber(currentMonthRates.USD)}</Text>
+        <Text style={styles.currency}>USD: {formatNumber(currentMonthRates.USD)}</Text>
         <View style={styles.separator}></View>
-        <Text style={styles.infoMessage}> EUR: {formatNumber(currentMonthRates.EUR)}</Text>
+        <Text style={styles.currency}> EUR: {formatNumber(currentMonthRates.EUR)}</Text>
       </View>
-      <Text>dateUsed={currentMonthRates.dateUsed}</Text>
-     
+        {/* Якщо monthString в майбутньому => показуємо HintBlock з датою, за яку взято курс */}
+        {isFutureMonth(currentMonth) && currentMonthRates.dateUsed && (
+          <View style={styles.currencyBlock}>
+            <Text style={styles.currencyRate}>Курс валют за: {currentMonthRates.dateUsed}</Text>
+            <TouchableOpacity onPress={handleRefreshRates}>
+              <Image source={require('../../assets/icon/refresh.png')} style={styles.icon} />
+            </TouchableOpacity>
+          </View>
+        )}
 
       {/* Основний блок: Totals (у гривні, доларі, євро) */}
       <View style={styles.mainBlock}>
@@ -198,20 +217,13 @@ export default function FilledMonth({ sources = [], currentMonth, onEdit }: Fill
           </Text>
         </View>
 
-        {/* Якщо monthString в майбутньому => показуємо HintBlock з датою, за яку взято курс */}
-        {isFutureMonth(currentMonth) && currentMonthRates.dateUsed && (
-          <HintBlock text={`Курс валют за ${currentMonthRates.dateUsed}`} />
-        )}
-
         <View style={styles.divider} />
-      </View>
 
       {/* Якщо currentIndex=0 => це найперший місяць => показуємо текст */}
       {currentIndex === 0 && (
-        <Text style={styles.infoMessage}>
-          Чудовий початок, продовжуй заповнювати – і тут з'явиться різниця з твоїм попереднім балансом.
-        </Text>
+        <HintBlock text={`Чудовий початок, продовжуй і в наступному місяці тут з'явиться порівняння двох місяців.`} />
       )}
+      </View>
 
       {/* 2-й блок: якщо currentIndex >=1 */}
       {currentIndex >= 1 && (

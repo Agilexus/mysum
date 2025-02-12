@@ -76,8 +76,7 @@ export default function EmptyMonth({ onSubmit, monthKey, initialSources = [] }: 
 
     return (
         <View style={styles.container}>
-            <KeyboardAwareScrollView 
-                style={styles.form} 
+            <KeyboardAwareScrollView  
                 contentContainerStyle={{ paddingBottom: 100 }}
                 keyboardShouldPersistTaps="handled"
                 enableOnAndroid
@@ -87,7 +86,7 @@ export default function EmptyMonth({ onSubmit, monthKey, initialSources = [] }: 
                 <HintBlock text="Почни зі створення джерела (місце де зберігаються активи) та дай йому зрозумілу для тебе назву." />
                 
                 {sources.map((source) => (
-                    <View key={source.id} style={styles.sourceContainer}>
+                    <View key={source.id} >
                         <SourceTitle
                             title={source.name}
                             onChangeTitle={(newName: string) => updateSourceName(source.id, newName)}
@@ -98,7 +97,7 @@ export default function EmptyMonth({ onSubmit, monthKey, initialSources = [] }: 
                         <HintBlock text="Якщо джерело мультивалютне, вкажи дані по кожній валюті окремо, просто переписавши баланс." />
 
                         <CustomInput
-                            style={[styles.mb24, styles.mt24]}
+                            style={[styles.input]}
                             label="USD – залишок"
                             placeholder="0,00"
                             allowNumbersOnly
@@ -106,7 +105,7 @@ export default function EmptyMonth({ onSubmit, monthKey, initialSources = [] }: 
                             onChangeText={(value) => updateSourceValue(source.id, 'USD', value)}
                         />
                         <CustomInput 
-                            style={styles.mb24}
+                            style={styles.input}
                             label="EUR – залишок"
                             placeholder="0,00"
                             allowNumbersOnly
@@ -114,7 +113,7 @@ export default function EmptyMonth({ onSubmit, monthKey, initialSources = [] }: 
                             onChangeText={(value) => updateSourceValue(source.id, 'EUR', value)}
                         />
                         <CustomInput 
-                            style={styles.mb24}
+                            style={styles.input}
                             label="UAH – залишок"
                             placeholder="0,00"
                             allowNumbersOnly

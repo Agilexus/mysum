@@ -3,7 +3,6 @@ import { typography } from '@/components/style';
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 16,
     marginBottom: 32,
 
   },

@@ -2,16 +2,28 @@ import { StyleSheet } from 'react-native';
 import { typography } from '@/components/style';
 
 const styles = StyleSheet.create({
+  container: {
+    width: "100%",
+    flex: 1,
+    marginTop: 8,
+    backgroundColor: '#F4FFFB',
+    paddingHorizontal: 16,
+    paddingBottom: 100,
+  },
   pill: {
     flexDirection: 'row',
-    marginTop: 8,
-    marginHorizontal: 80,
+    marginHorizontal: 72,
     display: 'flex',
     height: 32,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#C4E2DA',
+    backgroundColor: '#DCF0EB',
     borderRadius: 100,
+  },
+  currency: {
+    ...typography.regular,
+    color: '#026C57',
+    textAlign: 'center',
   },
   separator: {
     width: 2,
@@ -20,22 +32,29 @@ const styles = StyleSheet.create({
     opacity: 0.5,
     marginHorizontal: 16,
   },
-  container: {
-    width: "100%",
-    flex: 1,
-    marginTop: 0,
-    backgroundColor: '#F4FFFB',
-    paddingBottom: 100,
+  currencyBlock: {
+    display: 'flex',
+    marginTop: 8,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  currencyRate: { 
+    ...typography.regular,
+    color: '#026C57',
+    opacity: 0.7,
+    marginRight: 6,
+  },
+  icon: {
+    width: 20,
+    height: 20,
   },
   mainBlock: {
     display: 'flex',
     flexDirection: 'column',
-    marginTop: 8,
-    paddingHorizontal: 16,
-    backgroundColor: '#F4FFFB',
+    marginTop: 32,
   },
   mainCurrency: { 
-    marginTop: 24,
     alignItems: 'center',
   },
   uahAmount: {
@@ -48,25 +67,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     gap: 16,
-    marginTop: 16,
+    marginTop: 8,
   },
   otherCurrency: {
     ...typography.midlNumb,
     color: '#026C57',
   },
   currencySign: {
-    opacity: 0.7,
-    marginRight: 16,
-  },
-  fixedButtonContainer: {
-    position: 'absolute',
-    bottom: 0,
-    height: 112,
-    width: '100%',
-    paddingTop: 8,
-    paddingHorizontal: 16,
-    backgroundColor: 'rgba(244, 255, 251, 0.80)',
-    backdropFilter: 'blur(2px)',
+    opacity: 0.7,    
   },
   divider: {
     display: 'flex',
@@ -77,11 +85,16 @@ const styles = StyleSheet.create({
     marginVertical: 32,
     borderRadius: 100,
   },
-  infoMessage: {
-    ...typography.regular,
-    color: '#026C57',
-    textAlign: 'center',
-  }
+  fixedButtonContainer: {
+    position: 'absolute',
+    left: 16,
+    bottom: 0,
+    height: 112,
+    paddingTop: 8,
+    width: '100%',
+    backgroundColor: 'rgba(244, 255, 251, 0.80)',
+    backdropFilter: 'blur(2px)',
+  },
 });
 
 export default styles;
