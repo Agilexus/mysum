@@ -3,14 +3,13 @@ import { typography } from '@/components/style';
 
 const styles = StyleSheet.create({
   container: {
-    height: 98,
+    height: 100,
     width: '100%',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingTop: 62,
-    paddingHorizontal: 0
-    ,
+    paddingHorizontal: 0,
   },
   icon: {
     width: 24,

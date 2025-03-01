@@ -80,7 +80,8 @@ export default function EmptyMonth({ onSubmit, monthKey, initialSources = [] }: 
                 contentContainerStyle={{ paddingBottom: 100 }}
                 keyboardShouldPersistTaps="handled"
                 enableOnAndroid
-                enableAutomaticScroll>
+                enableAutomaticScroll
+                enableResetScrollToCoords={false}>
                 
                 <Text style={[styles.title]}>Заповнення Балансу</Text>
                 <HintBlock text="Почни зі створення джерела (місце де зберігаються активи) та дай йому зрозумілу для тебе назву." />

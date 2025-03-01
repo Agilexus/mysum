@@ -5,12 +5,12 @@ const styles = StyleSheet.create({
   container: {
     width: "100%",
     flex: 1,
-    paddingTop: 24,
     paddingHorizontal: 16,
     backgroundColor: '#F4FFFB',
     paddingBottom: 100,
   },
   title: {
+    marginTop: 16,
     ...typography.bigText,
     color: '#026C57',
   },

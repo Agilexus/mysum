@@ -1,84 +1,82 @@
-import { useState } from 'react';
-import { View, Text, TextInput, StyleSheet } from 'react-native';
-
+import React, {
+  useState,
+  forwardRef,
+  useImperativeHandle,
+  useRef
+} from 'react';
+import {
+  View,
+  Text,
+  TextInput,
+  StyleSheet,
+  TextInputProps
+} from 'react-native';
 import { typography } from '../style';
 
-interface CustomInputProps {
+interface CustomInputProps extends TextInputProps {
   label?: string;
-  placeholder?: string;
   style?: object;
   value?: string;
   onChangeText?: (text: string) => void;
   allowNumbersOnly?: boolean;
 }
 
-export default function CustomInput({
-  label, 
-  placeholder, 
-  style, 
-  value, 
-  onChangeText,
-  allowNumbersOnly = false
-}: CustomInputProps) {
+// Використовуємо forwardRef, щоб можна було викликати focus() ззовні
+const CustomInput = forwardRef<TextInput, CustomInputProps>((
+  {
+    label,
+    placeholder,
+    style,
+    value,
+    onChangeText,
+    allowNumbersOnly = false,
+    ...restProps
+  },
+  ref
+) => {
   const [isFocused, setIsFocused] = useState(false);
-  const hasLabel = Boolean(label); 
+  const hasLabel = Boolean(label);
 
-  // Обробник зміни тексту (кожна літера, що вводиться)
+  // Локальний реф на внутрішній TextInput
+  const inputRef = useRef<TextInput>(null);
+
+  // Зовнішній реф (те, що “бачитиме” батьківський компонент)
+  useImperativeHandle(ref, () => inputRef.current!);
+
   const handleChangeText = (text: string) => {
-    // Якщо не вмикаємо "числовий" режим, просто викликаємо onChangeText
     if (!allowNumbersOnly) {
       onChangeText?.(text);
       return;
     }
-
-    // 1) Залишаємо тільки цифри, кому і пробіли
     let cleaned = text.replace(/[^0-9,\s]/g, '');
-
-    // 2) Дозволяємо лише одну кому (видаляємо всі наступні)
     const firstCommaIndex = cleaned.indexOf(',');
     if (firstCommaIndex !== -1) {
-      // "розрізаємо" рядок і замінюємо коми праворуч
       cleaned =
         cleaned.slice(0, firstCommaIndex + 1) +
         cleaned.slice(firstCommaIndex + 1).replace(/,/g, '');
     }
-
     onChangeText?.(cleaned);
   };
 
-  // Обробник втрати фокуса: форматуємо
   const handleBlur = () => {
     setIsFocused(false);
 
     if (allowNumbersOnly && value) {
-      // 1) Прибираємо всі пробіли, замінюємо кому на крапку
       let floatString = value.replace(/\s/g, '').replace(',', '.');
-
-      // 2) Пробуємо перетворити в число
       let numberValue = parseFloat(floatString);
 
-      // Якщо не число — скидаємо в порожній рядок
       if (isNaN(numberValue)) {
         onChangeText?.('');
         return;
       }
 
-      // 3) Форматуємо до двох знаків після коми
-      let formatted = numberValue.toFixed(2); // тепер це щось типу "1234.56"
-
-      // 4) Розділяємо цілу й дробову частину
-      let [integerPart, decimalPart] = formatted.split('.'); // ["1234","56"]
-
-      // 5) Додаємо пробіли між тисячами в цілій частині
+      let formatted = numberValue.toFixed(2);
+      let [integerPart, decimalPart] = formatted.split('.');
       integerPart = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
-
-      // 6) Збираємо назад та повертаємо кому
-      formatted = integerPart + ',' + decimalPart; // "1 234,56"
-
+      formatted = integerPart + ',' + decimalPart;
       onChangeText?.(formatted);
     }
   };
-
 
   return (
     <View style={[style]}>
@@ -87,10 +85,11 @@ export default function CustomInput({
       )}
 
       <TextInput
+        ref={inputRef} // прив’язуємо внутрішній TextInput до локального рефа
         style={[
-            typography.regular,
-            styles.input, 
-            isFocused && styles.focusedInput
+          typography.regular,
+          styles.input,
+          isFocused && styles.focusedInput
         ]}
         placeholder={placeholder}
         value={value}
@@ -98,10 +97,14 @@ export default function CustomInput({
         onChangeText={handleChangeText}
         onBlur={handleBlur}
         keyboardType={allowNumbersOnly ? 'numeric' : 'default'}
+        selectTextOnFocus
+        {...restProps}
       />
     </View>
-    );
-}
+  );
+});
+
+export default CustomInput;
 
 const styles = StyleSheet.create({
   input: {
@@ -119,10 +122,11 @@ const styles = StyleSheet.create({
     borderColor: '#026C57',
     borderWidth: 2,
     backgroundColor: '#FFF',
+    // У React Native "boxShadow" працює інакше, але залишимо приклад
     boxShadow: '0px 0px 0px 2px rgba(2, 108, 87, 0.20)',
   },
   label: {
     color: '#026C57',
-    marginBottom: 8
-  }
+    marginBottom: 8,
+  },
 });
